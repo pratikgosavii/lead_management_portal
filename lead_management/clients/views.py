@@ -52,82 +52,44 @@ class ClientAccessMixin(UserPassesTestMixin):
         return assigned_to == self.request.user
 
 class ClientListView(LoginRequiredMixin, ListView):
-    """Display all clients"""
     model = Client
     template_name = 'clients/client_list.html'
     context_object_name = 'clients'
     paginate_by = 10
-    
-    def get_queryset(self):
-        queryset = Client.objects.all()
-        
-        # Filter by role
-        if self.request.user.role == 'sales_rep':
-            # Get all leads assigned to this user
-            leads = Lead.objects.filter(assigned_to=self.request.user)
-            queryset = queryset.filter(lead__in=leads)
-        elif self.request.user.role == 'team_leader':
-            team_members = CustomUser.objects.filter(
-                Q(role='sales_rep') & 
-                (Q(profile__team_leader=self.request.user) | Q(pk=self.request.user.pk))
-            )
-            leads = Lead.objects.filter(assigned_to__in=team_members)
-            queryset = queryset.filter(lead__in=leads)
-            
-        # Search query
-        search_query = self.request.GET.get('search', '')
-        if search_query:
-            queryset = queryset.filter(
-                Q(name__icontains=search_query) |
-                Q(company__icontains=search_query) |
-                Q(email__icontains=search_query) |
-                Q(phone__icontains=search_query)
-            )
-            
-        return queryset
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['search_query'] = self.request.GET.get('search', '')
-        return context
 
-class ClientDetailView(LoginRequiredMixin, ClientAccessMixin, DetailView):
-    """Display client details"""
+class ClientDetailView(LoginRequiredMixin, DetailView):
     model = Client
     template_name = 'clients/client_detail.html'
     context_object_name = 'client'
 
 class ClientCreateView(LoginRequiredMixin, CreateView):
-    """Create a new client"""
     model = Client
     form_class = ClientForm
     template_name = 'clients/client_form.html'
     success_url = reverse_lazy('client_list')
-    
+
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         messages.success(self.request, 'Client created successfully.')
         return super().form_valid(form)
 
-class ClientUpdateView(LoginRequiredMixin, ClientAccessMixin, UpdateView):
-    """Update an existing client"""
+class ClientUpdateView(LoginRequiredMixin, UpdateView):
     model = Client
     form_class = ClientForm
     template_name = 'clients/client_form.html'
-    
+    success_url = reverse_lazy('client_list')
+
     def form_valid(self, form):
         messages.success(self.request, 'Client updated successfully.')
         return super().form_valid(form)
 
-class ClientDeleteView(LoginRequiredMixin, AdminOrManagerRequiredMixin, DeleteView):
-    """Delete a client"""
+class ClientDeleteView(LoginRequiredMixin, DeleteView):
     model = Client
     template_name = 'clients/client_confirm_delete.html'
     success_url = reverse_lazy('client_list')
-    
+
     def delete(self, request, *args, **kwargs):
-        client = self.get_object()
-        messages.success(request, f'Client "{client}" deleted successfully.')
+        messages.success(request, 'Client deleted successfully.')
         return super().delete(request, *args, **kwargs)
 
 class ConvertLeadView(LoginRequiredMixin, FormView):
