@@ -1,19 +1,19 @@
 /* Custom styles for Its Digital Lead Manager Pro */
 
 :root {
-    --primary-color: #5a2c82; /* Dark Purple */
-    --primary-light: #8959b3; /* Light Purple */
-    --primary-dark: #3a1b52; /* Very Dark Purple */
+    --primary-color: #34495e; /* Dark Blue-Grey (more sophisticated) */
+    --primary-light: #5d6d7e; /* Light Blue-Grey */
+    --primary-dark: #1a2530; /* Very Dark Blue-Grey */
     --secondary-color: #e2e2e2; /* Light Grey */
     --secondary-dark: #b1b1b1; /* Darker Grey */
-    --accent-color: #ff7f50; /* Coral accent for highlights */
+    --accent-color: #f39c12; /* Gold accent for highlights - more classy */
     --bg-color: #f8f9fa; /* Light Background */
     --text-color: #343a40; /* Dark Text */
     --text-light: #f8f9fa; /* Light Text */
-    --success-color: #28a745; /* Success Green */
-    --info-color: #17a2b8; /* Info Blue */
-    --warning-color: #ffc107; /* Warning Yellow */
-    --danger-color: #dc3545; /* Danger Red */
+    --success-color: #2ecc71; /* Success Green - more refined */
+    --info-color: #3498db; /* Info Blue - more refined */
+    --warning-color: #f39c12; /* Warning Gold */
+    --danger-color: #e74c3c; /* Danger Red - more refined */
 }
 
 body {

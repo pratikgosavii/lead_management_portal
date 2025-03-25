@@ -1,9 +1,17 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, View
 from django.contrib import messages
 from django.db.models import Q
+from django.http import HttpResponse
+from django.template.loader import render_to_string, get_template
+from django.utils import timezone
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill
+from xhtml2pdf import pisa
+import pytz
+import io
 
 from .models import Lead, LeadSource, LeadStatus
 from .forms import LeadForm, LeadUpdateForm, LeadAssignForm
@@ -186,3 +194,138 @@ class MyLeadsView(LoginRequiredMixin, ListView):
         context['statuses'] = LeadStatus.objects.all()
         context['is_my_leads'] = True
         return context
+        
+class ExportLeadsExcelView(LoginRequiredMixin, View):
+    """Export leads to Excel"""
+    def get(self, request):
+        # Get leads based on user role and filters (similar to LeadListView)
+        queryset = Lead.objects.all()
+        
+        # Filter by role
+        if request.user.role == 'sales_rep':
+            queryset = queryset.filter(assigned_to=request.user)
+        elif request.user.role == 'team_leader':
+            team_members = CustomUser.objects.filter(
+                Q(role='sales_rep') & 
+                (Q(profile__team_leader=request.user) | Q(pk=request.user.pk))
+            )
+            queryset = queryset.filter(assigned_to__in=team_members)
+            
+        # Search and filter options
+        search_query = request.GET.get('search', '')
+        status_filter = request.GET.get('status', '')
+        
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(company__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(phone__icontains=search_query)
+            )
+            
+        if status_filter:
+            queryset = queryset.filter(status__id=status_filter)
+        
+        # Create workbook and add worksheet
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Leads"
+        
+        # Set column widths
+        ws.column_dimensions['A'].width = 5
+        ws.column_dimensions['B'].width = 20
+        ws.column_dimensions['C'].width = 20
+        ws.column_dimensions['D'].width = 30
+        ws.column_dimensions['E'].width = 15
+        ws.column_dimensions['F'].width = 15
+        ws.column_dimensions['G'].width = 20
+        ws.column_dimensions['H'].width = 20
+        
+        # Header styles
+        header_font = Font(name='Arial', bold=True, color='FFFFFF')
+        header_fill = PatternFill(start_color="34495E", end_color="34495E", fill_type="solid")
+        centered = Alignment(horizontal='center')
+        
+        # Add headers
+        headers = ['ID', 'Name', 'Company', 'Email', 'Phone', 'Status', 'Source', 'Assigned To']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = centered
+        
+        # Add data
+        row_num = 2
+        for lead in queryset:
+            ws.cell(row=row_num, column=1, value=lead.id)
+            ws.cell(row=row_num, column=2, value=lead.name)
+            ws.cell(row=row_num, column=3, value=lead.company)
+            ws.cell(row=row_num, column=4, value=lead.email)
+            ws.cell(row=row_num, column=5, value=lead.phone)
+            ws.cell(row=row_num, column=6, value=lead.status.name if lead.status else 'N/A')
+            ws.cell(row=row_num, column=7, value=lead.source.name if lead.source else 'N/A')
+            ws.cell(row=row_num, column=8, value=str(lead.assigned_to) if lead.assigned_to else 'Unassigned')
+            row_num += 1
+        
+        # Create response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename=leads_export.xlsx'
+        
+        # Save workbook to response
+        wb.save(response)
+        return response
+
+class ExportLeadsPDFView(LoginRequiredMixin, View):
+    """Export leads to PDF"""
+    def get(self, request):
+        # Get leads based on user role and filters (similar to LeadListView)
+        queryset = Lead.objects.all()
+        
+        # Filter by role
+        if request.user.role == 'sales_rep':
+            queryset = queryset.filter(assigned_to=request.user)
+        elif request.user.role == 'team_leader':
+            team_members = CustomUser.objects.filter(
+                Q(role='sales_rep') & 
+                (Q(profile__team_leader=request.user) | Q(pk=request.user.pk))
+            )
+            queryset = queryset.filter(assigned_to__in=team_members)
+            
+        # Search and filter options
+        search_query = request.GET.get('search', '')
+        status_filter = request.GET.get('status', '')
+        
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(company__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(phone__icontains=search_query)
+            )
+            
+        if status_filter:
+            queryset = queryset.filter(status__id=status_filter)
+        
+        # Render template to string
+        html_string = render_to_string(
+            'leads/lead_pdf_template.html',
+            {
+                'leads': queryset,
+                'title': 'Leads Report',
+                'date': timezone.now().strftime('%B %d, %Y'),
+                'user': request.user,
+            }
+        )
+        
+        # Create PDF
+        result = io.BytesIO()
+        pdf = pisa.pisaDocument(io.BytesIO(html_string.encode("UTF-8")), result)
+        
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="leads_report.pdf"'
+            return response
+        
+        return HttpResponse("Error generating PDF", status=500)
