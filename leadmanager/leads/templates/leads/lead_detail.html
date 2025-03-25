@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}Lead Details: {{ lead.full_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'lead_list' %}">Leads</a></li>
+                <li class="breadcrumb-item active">{{ lead.full_name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Lead Information</h6>
+                <div>
+                    {% if not lead.converted_to_client %}
+                    <a href="{% url 'convert_to_client' lead.id %}" class="btn btn-sm btn-success me-1" onclick="return confirm('Are you sure you want to convert this lead to a client?')">
+                        <i class="fas fa-user-check"></i> Convert to Client
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'lead_update' lead.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit"></i> Edit Lead
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if lead.converted_to_client %}
+                <div class="alert alert-success mb-3">
+                    <i class="fas fa-check-circle"></i> This lead has been converted to a client.
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h5>Basic Information</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th class="bg-light" width="40%">Name</th>
+                                <td>{{ lead.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Company</th>
+                                <td>{{ lead.company|default:"—" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Position</th>
+                                <td>{{ lead.position|default:"—" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Email</th>
+                                <td><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Phone</th>
+                                <td><a href="tel:{{ lead.phone }}">{{ lead.phone }}</a></td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Address</th>
+                                <td>{{ lead.address|default:"—"|linebreaks }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <h5>Lead Status</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th class="bg-light" width="40%">Status</th>
+                                <td>
+                                    {% if lead.status == 'new' %}
+                                    <span class="badge bg-info">New</span>
+                                    {% elif lead.status == 'contacted' %}
+                                    <span class="badge bg-warning text-dark">Contacted</span>
+                                    {% elif lead.status == 'qualified' %}
+                                    <span class="badge bg-primary">Qualified</span>
+                                    {% elif lead.status == 'proposal' %}
+                                    <span class="badge bg-secondary">Proposal</span>
+                                    {% elif lead.status == 'negotiation' %}
+                                    <span class="badge bg-warning text-dark">Negotiation</span>
+                                    {% elif lead.status == 'won' %}
+                                    <span class="badge bg-success">Won</span>
+                                    {% elif lead.status == 'lost' %}
+                                    <span class="badge bg-danger">Lost</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Stage</th>
+                                <td>{{ lead.get_stage_display }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Source</th>
+                                <td>{{ lead.source|default:"—" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Assigned To</th>
+                                <td>{{ lead.assigned_to.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Created By</th>
+                                <td>{{ lead.created_by.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Created At</th>
+                                <td>{{ lead.created_at|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Next Follow-up</th>
+                                <td>
+                                    {% if lead.next_follow_up %}
+                                    {{ lead.next_follow_up|date:"M d, Y H:i" }}
+                                    {% else %}
+                                    —
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h5>Deal Information</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th class="bg-light" width="40%">Estimated Value</th>
+                                <td>${{ lead.estimated_value }}</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Probability</th>
+                                <td>{{ lead.probability }}%</td>
+                            </tr>
+                            <tr>
+                                <th class="bg-light">Expected Value</th>
+                                <td>${{ lead.expected_value }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <h5>Notes</h5>
+                        <div class="border p-3 rounded bg-light" style="min-height: 100px;">
+                            {{ lead.notes|default:"No notes added yet."|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <!-- Status Update Form -->
+                <form method="post" action="{% url 'update_lead_status' lead.id %}" class="mb-4">
+                    {% csrf_token %}
+                    <h6 class="mb-3">Update Status</h6>
+                    
+                    <div class="mb-3">
+                        <label for="{{ status_form.status.id_for_label }}" class="form-label">Status</label>
+                        {{ status_form.status }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ status_form.stage.id_for_label }}" class="form-label">Stage</label>
+                        {{ status_form.stage }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ status_form.probability.id_for_label }}" class="form-label">Probability (%)</label>
+                        {{ status_form.probability }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ status_form.next_follow_up.id_for_label }}" class="form-label">Next Follow-up</label>
+                        {{ status_form.next_follow_up }}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Update Status</button>
+                </form>
+                
+                <hr>
+                
+                <!-- Lead Assignment Form -->
+                <h6 class="mb-3">Assign Lead</h6>
+                <form method="post" action="{% url 'assign_lead' lead.id %}" class="mb-4">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_assigned_to" class="form-label">Assigned To</label>
+                        <select name="assigned_to" class="form-select" id="id_assigned_to">
+                            {% for user in user.get_assignable_users %}
+                            <option value="{{ user.id }}" {% if lead.assigned_to.id == user.id %}selected{% endif %}>
+                                {{ user.get_full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Assign Lead</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Interactions</h6>
+            </div>
+            <div class="card-body">
+                <!-- Add Interaction Form -->
+                <form method="post" action="{% url 'add_interaction' lead.id %}" class="mb-4">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ interaction_form.interaction_type.id_for_label }}" class="form-label">Type</label>
+                            {{ interaction_form.interaction_type }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ interaction_form.date_time.id_for_label }}" class="form-label">Date/Time</label>
+                            {{ interaction_form.date_time }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ interaction_form.summary.id_for_label }}" class="form-label">Summary</label>
+                            {{ interaction_form.summary }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="{{ interaction_form.details.id_for_label }}" class="form-label">Details</label>
+                            {{ interaction_form.details }}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Interaction</button>
+                </form>
+                
+                <hr>
+                
+                <!-- Interactions List -->
+                <h5 class="mb-3">Interaction History</h5>
+                {% if interactions %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Type</th>
+                                <th>Date/Time</th>
+                                <th>Summary</th>
+                                <th>Created By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for interaction in interactions %}
+                            <tr>
+                                <td>{{ interaction.get_interaction_type_display }}</td>
+                                <td>{{ interaction.date_time|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <strong>{{ interaction.summary }}</strong>
+                                    {% if interaction.details %}
+                                    <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#interaction-{{ interaction.id }}">
+                                        Show Details
+                                    </button>
+                                    <div class="collapse" id="interaction-{{ interaction.id }}">
+                                        <div class="card card-body">
+                                            {{ interaction.details|linebreaks }}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ interaction.created_by.get_full_name }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No interactions recorded yet. Use the form above to add your first interaction.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

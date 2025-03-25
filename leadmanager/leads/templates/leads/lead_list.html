@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block title %}Leads Management{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3">Leads Management</h1>
+            <a href="{% url 'lead_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add New Lead
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Stats -->
+<div class="row mb-4">
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-primary h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Leads</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_leads }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-info h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">New Leads</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ new_leads }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-plus-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-warning h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Contacted</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ contacted_leads }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-phone fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-success h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Qualified</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ qualified_leads }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-primary h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Won</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ won_leads }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-trophy fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 mb-3">
+        <div class="card border-left-danger h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Follow-ups Today</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ followups_today }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Lead List</h6>
+        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+            <i class="fas fa-filter"></i> Filters
+        </button>
+    </div>
+    
+    <div class="collapse" id="filterCollapse">
+        <div class="card-body bg-light">
+            <form method="get" class="row g-3">
+                <div class="col-md-3 mb-3">
+                    <label for="{{ filter_form.status.id_for_label }}" class="form-label">Status</label>
+                    {{ filter_form.status }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ filter_form.stage.id_for_label }}" class="form-label">Stage</label>
+                    {{ filter_form.stage }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ filter_form.assigned_to.id_for_label }}" class="form-label">Assigned To</label>
+                    {{ filter_form.assigned_to }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ filter_form.source.id_for_label }}" class="form-label">Source</label>
+                    {{ filter_form.source }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ filter_form.converted.id_for_label }}" class="form-label">Conversion Status</label>
+                    {{ filter_form.converted }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ filter_form.date_from.id_for_label }}" class="form-label">Date From</label>
+                    {{ filter_form.date_from }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="{{ filter_form.date_to.id_for_label }}" class="form-label">Date To</label>
+                    {{ filter_form.date_to }}
+                </div>
+                <div class="col-md-3 mb-3 d-flex align-items-end">
+                    <div class="d-grid gap-2 d-md-flex">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <a href="{% url 'lead_list' %}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Company</th>
+                        <th>Status</th>
+                        <th>Stage</th>
+                        <th>Value</th>
+                        <th>Assigned To</th>
+                        <th>Created</th>
+                        <th>Next Follow-up</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lead in leads %}
+                    <tr {% if lead.converted_to_client %}class="table-success"{% endif %}>
+                        <td>
+                            <a href="{% url 'lead_detail' lead.id %}">{{ lead.full_name }}</a>
+                            {% if lead.converted_to_client %}
+                            <span class="badge bg-success ms-1">Client</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ lead.company|default:"—" }}</td>
+                        <td>
+                            {% if lead.status == 'new' %}
+                            <span class="badge bg-info">New</span>
+                            {% elif lead.status == 'contacted' %}
+                            <span class="badge bg-warning text-dark">Contacted</span>
+                            {% elif lead.status == 'qualified' %}
+                            <span class="badge bg-primary">Qualified</span>
+                            {% elif lead.status == 'proposal' %}
+                            <span class="badge bg-secondary">Proposal</span>
+                            {% elif lead.status == 'negotiation' %}
+                            <span class="badge bg-warning text-dark">Negotiation</span>
+                            {% elif lead.status == 'won' %}
+                            <span class="badge bg-success">Won</span>
+                            {% elif lead.status == 'lost' %}
+                            <span class="badge bg-danger">Lost</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ lead.get_stage_display }}</td>
+                        <td>${{ lead.estimated_value }} ({{ lead.probability }}%)</td>
+                        <td>{{ lead.assigned_to.get_full_name }}</td>
+                        <td>{{ lead.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            {% if lead.next_follow_up %}
+                            {{ lead.next_follow_up|date:"M d, Y H:i" }}
+                            {% else %}
+                            —
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'lead_detail' lead.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'lead_update' lead.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if not lead.converted_to_client %}
+                                <a href="{% url 'convert_to_client' lead.id %}" class="btn btn-outline-success" onclick="return confirm('Are you sure you want to convert this lead to a client?')">
+                                    <i class="fas fa-user-check"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">No leads found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
