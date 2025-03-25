@@ -3,9 +3,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Toggle sidebar on mobile
     const sidebarToggleButton = document.querySelector('.navbar-toggler');
-    if (sidebarToggleButton) {
+    const sidebar = document.querySelector('#sidebar');
+    if (sidebarToggleButton && sidebar) {
         sidebarToggleButton.addEventListener('click', function() {
-            document.querySelector('#sidebar').classList.toggle('show');
+            sidebar.classList.toggle('show');
         });
     }
 
