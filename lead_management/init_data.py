@@ -8,6 +8,7 @@ django.setup()
 
 # Import models
 from django.contrib.auth import get_user_model
+from accounts.models import UserProfile
 from leads.models import LeadSource, LeadStatus, Lead
 from clients.models import Client
 from projects.models import ProjectStatus, Project
@@ -101,8 +102,12 @@ def create_initial_data():
             "first_name": "Mark",
             "last_name": "Johnson",
             "role": "manager",
-            "daily_salary": 200.00,
-            "is_staff": True
+            "is_staff": True,
+            "profile": {
+                "phone_number": "+1234567890",
+                "address": "123 Manager St, Business City",
+                "daily_rate": 200.00
+            }
         },
         {
             "username": "teamlead1",
@@ -111,8 +116,12 @@ def create_initial_data():
             "first_name": "Sarah",
             "last_name": "Williams",
             "role": "team_leader",
-            "daily_salary": 150.00,
-            "is_staff": True
+            "is_staff": True,
+            "profile": {
+                "phone_number": "+1987654321",
+                "address": "456 Leader Ave, Sales Town",
+                "daily_rate": 150.00
+            }
         },
         {
             "username": "sales1",
@@ -121,8 +130,12 @@ def create_initial_data():
             "first_name": "John",
             "last_name": "Smith",
             "role": "sales_rep",
-            "daily_salary": 100.00,
-            "is_staff": False
+            "is_staff": False,
+            "profile": {
+                "phone_number": "+1122334455",
+                "address": "789 Sales Rd, Prospect City",
+                "daily_rate": 100.00
+            }
         },
         {
             "username": "sales2",
@@ -131,19 +144,27 @@ def create_initial_data():
             "first_name": "Emma",
             "last_name": "Davis",
             "role": "sales_rep",
-            "daily_salary": 100.00,
-            "is_staff": False
+            "is_staff": False,
+            "profile": {
+                "phone_number": "+1555666777",
+                "address": "321 Rep Blvd, Lead Village",
+                "daily_rate": 100.00
+            }
         }
     ]
     
     # Get the admin user to set as manager
     try:
-        admin_user = User.objects.get(username="admin")
+        admin_user = User.objects.get(username="Admin")
+        print(f"Found admin user: {admin_user.username}")
     except User.DoesNotExist:
         admin_user = None
+        print("Admin user not found")
     
     created_users = []
     for user_data in users:
+        profile_data = user_data.pop('profile', {})
+        
         user, created = User.objects.get_or_create(
             username=user_data["username"],
             defaults={
@@ -151,29 +172,109 @@ def create_initial_data():
                 "first_name": user_data["first_name"],
                 "last_name": user_data["last_name"],
                 "role": user_data["role"],
-                "daily_salary": user_data["daily_salary"],
                 "is_staff": user_data["is_staff"]
             }
         )
         
         if created:
             user.set_password(user_data["password"])
-            if user_data["role"] == "manager":
-                user.manager = admin_user
-            elif user_data["role"] == "team_leader":
-                # Find a manager to assign as this user's manager
-                manager = User.objects.filter(role="manager").first()
-                if manager:
-                    user.manager = manager
-            elif user_data["role"] == "sales_rep":
-                # Find a team leader to assign as this user's manager
-                team_leader = User.objects.filter(role="team_leader").first()
-                if team_leader:
-                    user.manager = team_leader
             user.save()
             created_users.append(user)
+            
+            # Create or update user profile
+            UserProfile.objects.update_or_create(
+                user=user,
+                defaults={
+                    "phone_number": profile_data.get("phone_number", ""),
+                    "address": profile_data.get("address", ""),
+                    "daily_rate": profile_data.get("daily_rate", 0)
+                }
+            )
+    
+    # Set manager relationships after all users are created
+    if created_users:
+        # Find users by role
+        managers = User.objects.filter(role="manager")
+        team_leaders = User.objects.filter(role="team_leader")
+        sales_reps = User.objects.filter(role="sales_rep")
+        
+        # Assign admin as manager for managers
+        for manager in managers:
+            if admin_user:
+                print(f"Setting {admin_user.username} as manager for {manager.username}")
+                # No direct manager relationship in CustomUser, handle via other means if needed
+        
+        # Assign managers to team leaders
+        for team_leader in team_leaders:
+            if managers.exists():
+                manager = managers.first()
+                print(f"Setting {manager.username} as manager for {team_leader.username}")
+                # No direct manager relationship in CustomUser, handle via other means if needed
+        
+        # Assign team leaders to sales reps
+        for sales_rep in sales_reps:
+            if team_leaders.exists():
+                team_leader = team_leaders.first()
+                print(f"Setting {team_leader.username} as manager for {sales_rep.username}")
+                # No direct manager relationship in CustomUser, handle via other means if needed
     
     print(f"✓ Created {len(created_users)} users")
+    
+    # Create sample leads
+    if User.objects.exists() and LeadSource.objects.exists() and LeadStatus.objects.exists():
+        leads = [
+            {
+                "name": "John Potential",
+                "company": "Acme Corp",
+                "phone": "+1234567890",
+                "email": "john@acmecorp.com",
+                "address": "123 Business St, City",
+                "notes": "Interested in our premium package"
+            },
+            {
+                "name": "Sarah Prospect",
+                "company": "XYZ Industries",
+                "phone": "+1987654321",
+                "email": "sarah@xyzind.com",
+                "address": "456 Industry Ave, Town",
+                "notes": "Requested a product demo"
+            },
+            {
+                "name": "Mike Customer",
+                "company": "Global Solutions",
+                "phone": "+1122334455",
+                "email": "mike@globalsolutions.com",
+                "address": "789 Global Rd, City",
+                "notes": "Looking for a customized solution"
+            }
+        ]
+        
+        created_leads = []
+        creator = User.objects.first()
+        assigned_to = User.objects.filter(role="sales_rep").first() or creator
+        source = LeadSource.objects.first()
+        status = LeadStatus.objects.filter(name="New").first() or LeadStatus.objects.first()
+        
+        for lead_data in leads:
+            lead, created = Lead.objects.get_or_create(
+                name=lead_data["name"],
+                defaults={
+                    "company": lead_data["company"],
+                    "phone": lead_data["phone"],
+                    "email": lead_data["email"],
+                    "address": lead_data["address"],
+                    "notes": lead_data["notes"],
+                    "created_by": creator,
+                    "assigned_to": assigned_to,
+                    "source": source,
+                    "status": status
+                }
+            )
+            
+            if created:
+                created_leads.append(lead)
+        
+        print(f"✓ Created {len(created_leads)} leads")
     
     print("Initial data created successfully!")
 
