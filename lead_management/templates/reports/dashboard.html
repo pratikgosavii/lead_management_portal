@@ -97,12 +97,20 @@
                             {% if month_revenue > last_month_revenue %}
                             <span class="text-success">
                                 <i class="fas fa-arrow-up me-1"></i>
+                                {% if last_month_revenue != 0 %}
                                 {{ month_revenue|sub:last_month_revenue|div:last_month_revenue|mul:100|floatformat:1 }}%
+                                {% else %}
+                                100%
+                                {% endif %}
                             </span>
                             {% elif month_revenue < last_month_revenue %}
                             <span class="text-danger">
                                 <i class="fas fa-arrow-down me-1"></i>
+                                {% if last_month_revenue != 0 %}
                                 {{ last_month_revenue|sub:month_revenue|div:last_month_revenue|mul:100|floatformat:1 }}%
+                                {% else %}
+                                0%
+                                {% endif %}
                             </span>
                             {% else %}
                             <span class="text-muted">

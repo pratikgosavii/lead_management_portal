@@ -75,6 +75,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 )
             except (ZeroDivisionError, TypeError):
                 context['conversion_rate'] = 0
+                
+            # Ensure all numeric values have defaults
+            for key in ['total_revenue', 'month_revenue', 'last_month_revenue', 'total_leads', 'converted_leads']:
+                context[key] = context.get(key, 0) or 0
 
             context['this_month_conversions'] = Lead.objects.filter(
                 lead_filter,
