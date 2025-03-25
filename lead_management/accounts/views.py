@@ -5,6 +5,9 @@ from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
 from django.db import transaction
+from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 
 from .models import CustomUser, UserProfile
 from .forms import CustomUserCreationForm, CustomUserChangeForm, UserProfileForm
@@ -148,12 +151,12 @@ class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
 class AdminPasswordChangeView(AdminOrManagerRequiredMixin, View):
     """Admin view to change user passwords"""
     template_name = 'accounts/admin_password_change.html'
-    
+
     def get(self, request, pk):
         user = get_object_or_404(CustomUser, pk=pk)
         form = SetPasswordForm(user)
         return render(request, self.template_name, {'form': form, 'user_obj': user})
-    
+
     def post(self, request, pk):
         user = get_object_or_404(CustomUser, pk=pk)
         form = SetPasswordForm(user, request.POST)
