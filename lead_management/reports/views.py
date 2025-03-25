@@ -583,13 +583,20 @@ class PerformanceReportView(LoginRequiredMixin, FormView):
                     Q(user=user) & date_filter_attendance & Q(status='present')
                 ).count()
                 
-                attendance_hours = Attendance.objects.filter(
+                # Calculate attendance hours by using time_in and time_out directly
+                attendance_records = Attendance.objects.filter(
                     Q(user=user) & date_filter_attendance & Q(status='present')
                 ).exclude(
                     Q(time_in=None) | Q(time_out=None)
-                ).aggregate(
-                    total_hours=Sum('total_hours')
-                )['total_hours'] or 0
+                )
+                
+                # Calculate total hours manually
+                attendance_hours = 0
+                for record in attendance_records:
+                    if record.time_in and record.time_out:
+                        # Get duration in hours
+                        duration = (record.time_out - record.time_in).total_seconds() / 3600
+                        attendance_hours += duration
                 
                 # Add to performance data
                 performance_data.append({
@@ -721,11 +728,17 @@ class AttendanceReportView(LoginRequiredMixin, FormView):
                 leave_count = attendance_records.filter(status='leave').count()
                 
                 # Calculate total hours worked
-                total_hours = attendance_records.filter(status='present').exclude(
+                present_records = attendance_records.filter(status='present').exclude(
                     Q(time_in=None) | Q(time_out=None)
-                ).aggregate(
-                    hours=Sum('total_hours')
-                )['hours'] or 0
+                )
+                
+                # Calculate total hours manually
+                total_hours = 0
+                for record in present_records:
+                    if record.time_in and record.time_out:
+                        # Get duration in hours
+                        duration = (record.time_out - record.time_in).total_seconds() / 3600
+                        total_hours += duration
                 
                 # Calculate average hours per day
                 avg_hours = total_hours / present_count if present_count > 0 else 0
