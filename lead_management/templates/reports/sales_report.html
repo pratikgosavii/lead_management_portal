@@ -1,0 +1,456 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if is_lead_report %}Lead Report{% else %}Sales Report{% endif %} - Lead Management System
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-{% if is_lead_report %}funnel-dollar{% else %}chart-line{% endif %} me-2"></i>
+        {% if is_lead_report %}Lead Report{% else %}Sales Report{% endif %}
+    </h1>
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Report Filters</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="{{ form.period.id_for_label }}" class="form-label">Time Period</label>
+                {{ form.period }}
+            </div>
+            
+            <div class="col-md-3 date-range-fields" style="display: none;">
+                <label for="{{ form.start_date.id_for_label }}" class="form-label">Start Date</label>
+                {{ form.start_date }}
+            </div>
+            
+            <div class="col-md-3 date-range-fields" style="display: none;">
+                <label for="{{ form.end_date.id_for_label }}" class="form-label">End Date</label>
+                {{ form.end_date }}
+            </div>
+            
+            {% if form.user %}
+            <div class="col-md-3">
+                <label for="{{ form.user.id_for_label }}" class="form-label">User</label>
+                {{ form.user }}
+            </div>
+            {% endif %}
+            
+            {% if form.status %}
+            <div class="col-md-3">
+                <label for="{{ form.status.id_for_label }}" class="form-label">Lead Status</label>
+                {{ form.status }}
+            </div>
+            {% endif %}
+            
+            <div class="col-md-3">
+                <label for="{{ form.group_by.id_for_label }}" class="form-label">Group By</label>
+                {{ form.group_by }}
+            </div>
+            
+            <div class="col-md-12 text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter me-2"></i> Generate Report
+                </button>
+                
+                {% if is_lead_report %}
+                <a href="{% url 'lead_report' %}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-redo me-2"></i> Reset
+                </a>
+                {% else %}
+                <a href="{% url 'sales_report' %}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-redo me-2"></i> Reset
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if chart_data %}
+<!-- Summary Card -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Summary</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% if is_lead_report %}
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h3>{{ total_leads }}</h3>
+                        <p class="text-muted mb-0">Total Leads</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h3>{{ converted_leads }}</h3>
+                        <p class="text-muted mb-0">Converted Leads</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h3>{{ conversion_rate }}%</h3>
+                        <p class="text-muted mb-0">Conversion Rate</p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h3>${{ total_revenue }}</h3>
+                        <p class="text-muted mb-0">Total Revenue</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h3>{{ payments|length }}</h3>
+                        <p class="text-muted mb-0">Total Payments</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h3>{{ start_date|date:"M d" }} - {{ end_date|date:"M d, Y" }}</h3>
+                        <p class="text-muted mb-0">Date Range</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Chart -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">
+            {% if is_lead_report %}Lead{% else %}Sales{% endif %} Chart
+            {% if group_by == 'day' %}
+            (Daily)
+            {% elif group_by == 'week' %}
+            (Weekly)
+            {% elif group_by == 'month' %}
+            (Monthly)
+            {% elif group_by == 'user' %}
+            (By User)
+            {% elif group_by == 'status' %}
+            (By Status)
+            {% endif %}
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="chart-container" style="position: relative; height:400px;">
+            <canvas id="reportChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Data -->
+<div class="card shadow">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Detailed Data</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    {% if is_lead_report %}
+                    <tr>
+                        <th>Name</th>
+                        <th>Company</th>
+                        <th>Status</th>
+                        <th>Assigned To</th>
+                        <th>Created Date</th>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <th>Date</th>
+                        <th>Project</th>
+                        <th>Client</th>
+                        <th>Amount</th>
+                        <th>Payment Method</th>
+                    </tr>
+                    {% endif %}
+                </thead>
+                <tbody>
+                    {% if is_lead_report %}
+                    {% for lead in lead_details %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'lead_detail' lead.id %}" class="text-decoration-none">
+                                {{ lead.name }}
+                            </a>
+                        </td>
+                        <td>{{ lead.company|default:"-" }}</td>
+                        <td>
+                            <span class="badge {% if lead.is_converted %}bg-success{% else %}bg-primary{% endif %}">
+                                {{ lead.status.name|default:"New" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if lead.assigned_to %}
+                            {{ lead.assigned_to.get_full_name|default:lead.assigned_to.username }}
+                            {% else %}
+                            <span class="text-muted">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ lead.created_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <p class="text-muted mb-0">No lead data found for the selected filters.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    {% for payment in payment_details %}
+                    <tr>
+                        <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'project_detail' payment.project.id %}" class="text-decoration-none">
+                                {{ payment.project.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'client_detail' payment.project.client.id %}" class="text-decoration-none">
+                                {{ payment.project.client.name }}
+                            </a>
+                        </td>
+                        <td class="fw-bold">${{ payment.amount }}</td>
+                        <td>{{ payment.payment_method.name|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <p class="text-muted mb-0">No payment data found for the selected filters.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show/hide date range fields based on period selection
+        const periodSelect = document.getElementById('{{ form.period.id_for_label }}');
+        const dateRangeFields = document.querySelectorAll('.date-range-fields');
+        
+        function toggleDateFields() {
+            if (periodSelect.value === 'custom') {
+                dateRangeFields.forEach(field => field.style.display = 'block');
+            } else {
+                dateRangeFields.forEach(field => field.style.display = 'none');
+            }
+        }
+        
+        // Initial toggle
+        toggleDateFields();
+        
+        // Toggle on change
+        periodSelect.addEventListener('change', toggleDateFields);
+        
+        // Chart rendering
+        {% if chart_data %}
+        const chartData = {{ chart_data|safe }};
+        const reportCtx = document.getElementById('reportChart').getContext('2d');
+        
+        {% if is_lead_report %}
+        // Lead report chart
+        {% if group_by == 'status' %}
+        // Pie chart for status distribution
+        const reportChart = new Chart(reportCtx, {
+            type: 'pie',
+            data: {
+                labels: chartData.map(item => item.status),
+                datasets: [{
+                    data: chartData.map(item => item.count),
+                    backgroundColor: [
+                        '#4e73df', // Primary
+                        '#1cc88a', // Success
+                        '#36b9cc', // Info
+                        '#f6c23e', // Warning
+                        '#e74a3b', // Danger
+                        '#858796', // Secondary
+                        '#5a5c69', // Dark
+                    ],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed + ' leads';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        {% elif group_by == 'user' %}
+        // Bar chart for user distribution
+        const reportChart = new Chart(reportCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.map(item => item.user),
+                datasets: [{
+                    label: 'Leads',
+                    data: chartData.map(item => item.count),
+                    backgroundColor: '#4e73df',
+                    borderColor: '#4e73df',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        {% else %}
+        // Line chart for date-based data
+        const reportChart = new Chart(reportCtx, {
+            type: 'line',
+            data: {
+                labels: chartData.map(item => item.date),
+                datasets: [{
+                    label: 'New Leads',
+                    data: chartData.map(item => item.count),
+                    backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                    borderColor: '#4e73df',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        {% endif %}
+        
+        {% else %}
+        // Sales report chart
+        {% if group_by == 'user' %}
+        // Bar chart for user revenue
+        const reportChart = new Chart(reportCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.map(item => item.user),
+                datasets: [{
+                    label: 'Revenue',
+                    data: chartData.map(item => item.revenue),
+                    backgroundColor: '#1cc88a',
+                    borderColor: '#1cc88a',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Revenue: $' + context.parsed.y.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        {% else %}
+        // Line chart for date-based revenue
+        const reportChart = new Chart(reportCtx, {
+            type: 'line',
+            data: {
+                labels: chartData.map(item => item.date),
+                datasets: [{
+                    label: 'Revenue',
+                    data: chartData.map(item => item.revenue),
+                    backgroundColor: 'rgba(28, 200, 138, 0.2)',
+                    borderColor: '#1cc88a',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Revenue: $' + context.parsed.y.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+        {% endif %}
+        {% endif %}
+    });
+</script>
+{% endblock %}

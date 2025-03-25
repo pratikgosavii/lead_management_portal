@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if is_my_attendance %}My Attendance{% elif selected_user %}Attendance for {{ selected_user.get_full_name|default:selected_user.username }}{% else %}All Attendance Records{% endif %} - Lead Management System
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-calendar-check me-2"></i>
+        {% if is_my_attendance %}
+            My Attendance
+        {% elif selected_user %}
+            Attendance for {{ selected_user.get_full_name|default:selected_user.username }}
+        {% else %}
+            All Attendance Records
+        {% endif %}
+    </h1>
+    <div>
+        {% if is_my_attendance %}
+        <a href="{% url 'punch' %}" class="btn btn-success me-2">
+            <i class="fas fa-clock me-2"></i> Punch In/Out
+        </a>
+        {% endif %}
+        
+        {% if user.is_superuser or user.role in 'admin,manager' %}
+        <a href="{% url 'attendance_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> Add Record
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if show_salary %}
+<div class="card shadow mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Salary Information</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h3>{{ days_worked }}</h3>
+                        <p class="text-muted mb-0">Days Worked</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h3>${{ daily_rate }}</h3>
+                        <p class="text-muted mb-0">Daily Rate</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h3>${{ monthly_salary }}</h3>
+                        <p class="text-muted mb-0">Monthly Salary</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card shadow">
+    <div class="card-header bg-white">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <form action="" method="get" class="row g-2">
+                    {% if not is_my_attendance and not selected_user %}
+                    <div class="col-md-3">
+                        <select name="user" class="form-select form-select-sm">
+                            <option value="">All Users</option>
+                            {% for user_obj in users %}
+                            <option value="{{ user_obj.id }}" {% if user_filter == user_obj.id|stringformat:"s" %}selected{% endif %}>
+                                {{ user_obj.get_full_name|default:user_obj.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-3">
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">All Statuses</option>
+                            {% for status_key, status_value in status_choices.items %}
+                            <option value="{{ status_key }}" {% if status_filter == status_key %}selected{% endif %}>
+                                {{ status_value }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <input type="date" name="start_date" class="form-control form-control-sm" placeholder="Start Date" value="{{ start_date }}">
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <input type="date" name="end_date" class="form-control form-control-sm" placeholder="End Date" value="{{ end_date }}">
+                    </div>
+                    
+                    {% if is_my_attendance %}
+                    <input type="hidden" name="show_salary" value="true">
+                    {% endif %}
+                    
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                    </div>
+                    
+                    <div class="col-auto">
+                        <a href="{% if is_my_attendance %}{% url 'my_attendance' %}{% elif selected_user %}{% url 'user_attendance' selected_user.id %}{% else %}{% url 'attendance_list' %}{% endif %}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    </div>
+                    
+                    {% if is_my_attendance and not show_salary %}
+                    <div class="col-auto">
+                        <a href="{% url 'my_attendance' %}?show_salary=true" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-money-bill-wave me-1"></i> Show Salary
+                        </a>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Date</th>
+                    {% if not is_my_attendance and not selected_user %}
+                    <th scope="col">User</th>
+                    {% endif %}
+                    <th scope="col">Status</th>
+                    <th scope="col">Time In</th>
+                    <th scope="col">Time Out</th>
+                    <th scope="col">Hours</th>
+                    <th scope="col">Notes</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attendance in attendances %}
+                <tr>
+                    <td>{{ attendance.date|date:"M d, Y" }} <small class="text-muted d-block">{{ attendance.date|date:"D" }}</small></td>
+                    
+                    {% if not is_my_attendance and not selected_user %}
+                    <td>
+                        <a href="{% url 'user_attendance' attendance.user.id %}" class="text-decoration-none">
+                            {{ attendance.user.get_full_name|default:attendance.user.username }}
+                        </a>
+                    </td>
+                    {% endif %}
+                    
+                    <td>
+                        <span class="badge 
+                            {% if attendance.status == 'present' %}bg-success
+                            {% elif attendance.status == 'absent' %}bg-danger
+                            {% elif attendance.status == 'half_day' %}bg-warning text-dark
+                            {% elif attendance.status == 'leave' %}bg-info
+                            {% else %}bg-secondary
+                            {% endif %}">
+                            {{ attendance.get_status_display }}
+                        </span>
+                    </td>
+                    
+                    <td>
+                        {% if attendance.time_in %}
+                        {{ attendance.time_in|time:"H:i" }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td>
+                        {% if attendance.time_out %}
+                        {{ attendance.time_out|time:"H:i" }}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td>
+                        {% if attendance.time_in and attendance.time_out %}
+                        {{ attendance.total_hours }} hrs
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td>
+                        {% if attendance.notes %}
+                        <span class="text-truncate d-inline-block" style="max-width: 150px;" title="{{ attendance.notes }}">
+                            {{ attendance.notes }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'attendance_detail' attendance.id %}" class="btn btn-outline-primary" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            
+                            {% if user.is_superuser or user.role in 'admin,manager' %}
+                            <a href="{% url 'attendance_edit' attendance.id %}" class="btn btn-outline-primary" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'attendance_delete' attendance.id %}" class="btn btn-outline-danger" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if not is_my_attendance and not selected_user %}8{% else %}7{% endif %}" class="text-center py-4">
+                        <p class="text-muted mb-0">No attendance records found.</p>
+                        
+                        {% if is_my_attendance %}
+                        <a href="{% url 'punch' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-clock me-2"></i> Punch In/Out
+                        </a>
+                        {% elif user.is_superuser or user.role in 'admin,manager' %}
+                        <a href="{% url 'attendance_add' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus me-2"></i> Add Record
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+    <div class="card-footer bg-white">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if show_salary %}&show_salary=true{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if show_salary %}&show_salary=true{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if show_salary %}&show_salary=true{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if show_salary %}&show_salary=true{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if show_salary %}&show_salary=true{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

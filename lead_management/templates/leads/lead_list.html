@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if is_my_leads %}My Leads{% else %}All Leads{% endif %} - Lead Management System
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-funnel-dollar me-2"></i>
+        {% if is_my_leads %}My Leads{% else %}All Leads{% endif %}
+    </h1>
+    <div>
+        <a href="{% url 'lead_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> Add Lead
+        </a>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-header bg-white">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <form action="" method="get" class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search leads..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-end">
+                    <div class="dropdown me-2">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="statusFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if active_status %}
+                                {% for status in statuses %}
+                                    {% if status.id|stringformat:"s" == active_status %}
+                                        {{ status.name }}
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                All Statuses
+                            {% endif %}
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="statusFilterDropdown">
+                            <li><a class="dropdown-item" href="?{% if search_query %}search={{ search_query }}{% endif %}">All Statuses</a></li>
+                            {% for status in statuses %}
+                            <li><a class="dropdown-item" href="?status={{ status.id }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ status.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <a href="{% url 'lead_list' %}" class="btn btn-outline-secondary {% if not is_my_leads %}active{% endif %}">All Leads</a>
+                        <a href="{% url 'my_leads' %}" class="btn btn-outline-secondary {% if is_my_leads %}active{% endif %}">My Leads</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Company</th>
+                    <th scope="col">Contact</th>
+                    <th scope="col">Source</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Assigned To</th>
+                    <th scope="col">Created</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads %}
+                <tr>
+                    <td>
+                        <a href="{% url 'lead_detail' lead.id %}" class="text-primary fw-bold text-decoration-none">
+                            {{ lead.name }}
+                        </a>
+                    </td>
+                    <td>{{ lead.company|default:"-" }}</td>
+                    <td>
+                        <small class="d-block">{{ lead.phone }}</small>
+                        <small class="d-block text-muted">{{ lead.email }}</small>
+                    </td>
+                    <td>{{ lead.source.name|default:"-" }}</td>
+                    <td>
+                        <span class="badge {% if lead.is_converted %}bg-success{% else %}bg-primary{% endif %}">
+                            {{ lead.status.name|default:"New" }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if lead.assigned_to %}
+                        {{ lead.assigned_to.get_full_name|default:lead.assigned_to.username }}
+                        {% else %}
+                        <span class="text-muted">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small class="d-block">{{ lead.created_at|date:"M d, Y" }}</small>
+                        <small class="d-block text-muted">{{ lead.created_at|timesince }} ago</small>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'lead_detail' lead.id %}" class="btn btn-outline-primary" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'lead_edit' lead.id %}" class="btn btn-outline-primary" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% if not lead.is_converted and user.is_authenticated and user.role in 'admin,manager' %}
+                            <a href="{% url 'lead_assign' lead.id %}" class="btn btn-outline-primary" title="Assign">
+                                <i class="fas fa-user-tag"></i>
+                            </a>
+                            {% endif %}
+                            {% if lead.is_converted %}
+                            <a href="{% url 'client_detail' lead.converted_client.id %}" class="btn btn-outline-success" title="View Client">
+                                <i class="fas fa-user-check"></i>
+                            </a>
+                            {% else %}
+                            <a href="{% url 'convert_lead' lead.id %}" class="btn btn-outline-success" title="Convert to Client">
+                                <i class="fas fa-user-plus"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-4">
+                        <p class="text-muted mb-0">No leads found.</p>
+                        <a href="{% url 'lead_add' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus me-2"></i> Add Lead
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+    <div class="card-footer bg-white">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if active_status %}&status={{ active_status }}{% endif %}" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if active_status %}&status={{ active_status }}{% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if active_status %}&status={{ active_status }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if active_status %}&status={{ active_status }}{% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if active_status %}&status={{ active_status }}{% endif %}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

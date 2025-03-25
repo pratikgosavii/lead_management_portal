@@ -1,0 +1,88 @@
+<!-- Top Navbar -->
+<nav class="navbar navbar-expand-md navbar-dark bg-primary sticky-top">
+    <div class="container-fluid">
+        <!-- Brand -->
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <i class="fas fa-chart-line me-2"></i>
+            Lead Management
+        </a>
+        
+        <!-- Toggle button for mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <!-- Navbar items -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/reports/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">
+                        <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if '/leads/' in request.path %}active{% endif %}" href="{% url 'lead_list' %}">
+                        <i class="fas fa-funnel-dollar me-1"></i> Leads
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if '/clients/' in request.path %}active{% endif %}" href="{% url 'client_list' %}">
+                        <i class="fas fa-users me-1"></i> Clients
+                    </a>
+                </li>
+                
+                <!-- Responsive: Hide on smaller screens (shown in sidebar) -->
+                <li class="nav-item d-none d-lg-block">
+                    <a class="nav-link {% if '/projects/' in request.path %}active{% endif %}" href="{% url 'project_list' %}">
+                        <i class="fas fa-project-diagram me-1"></i> Projects
+                    </a>
+                </li>
+                
+                <li class="nav-item d-none d-lg-block">
+                    <a class="nav-link {% if '/payments/' in request.path %}active{% endif %}" href="{% url 'payment_list' %}">
+                        <i class="fas fa-money-bill-wave me-1"></i> Payments
+                    </a>
+                </li>
+                
+                <li class="nav-item d-none d-lg-block">
+                    <a class="nav-link {% if '/attendance/punch/' in request.path %}active{% endif %}" href="{% url 'punch' %}">
+                        <i class="fas fa-clock me-1"></i> Attendance
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            
+            <!-- Right-aligned items -->
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                <!-- User dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1"></i>
+                        {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}
+                        <span class="badge bg-light text-dark">{{ user.get_role_display }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{% url 'my_leads' %}"><i class="fas fa-funnel-dollar me-2"></i> My Leads</a></li>
+                        <li><a class="dropdown-item" href="{% url 'my_clients' %}"><i class="fas fa-users me-2"></i> My Clients</a></li>
+                        <li><a class="dropdown-item" href="{% url 'my_attendance' %}"><i class="fas fa-calendar-check me-2"></i> My Attendance</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'password_change' %}"><i class="fas fa-key me-2"></i> Change Password</a></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <!-- Login link -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'login' %}">
+                        <i class="fas fa-sign-in-alt me-1"></i> Login
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

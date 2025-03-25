@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% block title %}Lead Details - {{ lead.name }} - Lead Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-funnel-dollar me-2"></i> Lead Details
+    </h1>
+    <div>
+        <a href="{% url 'lead_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Leads
+        </a>
+        <a href="{% url 'lead_edit' lead.id %}" class="btn btn-primary ms-2">
+            <i class="fas fa-edit me-2"></i> Edit
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Lead Information -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Lead Information</h5>
+                    <span class="badge {% if lead.is_converted %}bg-success{% else %}bg-primary{% endif %}">
+                        {{ lead.status.name|default:"New" }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-3">Basic Information</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Full Name</label>
+                            <div class="fw-bold">{{ lead.name }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Company</label>
+                            <div>{{ lead.company|default:"-" }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Phone Number</label>
+                            <div>{{ lead.phone }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Email Address</label>
+                            <div>{{ lead.email }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Address</label>
+                            <div>{{ lead.address|default:"-"|linebreaks }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-3">Lead Details</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Lead Source</label>
+                            <div>{{ lead.source.name|default:"-" }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Lead Status</label>
+                            <div>
+                                <span class="badge {% if lead.is_converted %}bg-success{% else %}bg-primary{% endif %}">
+                                    {{ lead.status.name|default:"New" }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Assigned To</label>
+                            <div>
+                                {% if lead.assigned_to %}
+                                {{ lead.assigned_to.get_full_name|default:lead.assigned_to.username }}
+                                <span class="badge bg-secondary">{{ lead.assigned_to.get_role_display }}</span>
+                                {% else %}
+                                <span class="text-muted">Unassigned</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Created By</label>
+                            <div>
+                                {% if lead.created_by %}
+                                {{ lead.created_by.get_full_name|default:lead.created_by.username }}
+                                {% else %}
+                                <span class="text-muted">System</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Created At</label>
+                            <div>{{ lead.created_at|date:"F d, Y H:i" }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Last Updated</label>
+                            <div>{{ lead.updated_at|date:"F d, Y H:i" }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-3">Notes</h6>
+                        <div class="p-3 bg-light rounded">
+                            {{ lead.notes|default:"No notes available."|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Actions and Conversion -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{% url 'lead_edit' lead.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-edit me-2 text-primary"></i>
+                                Edit Lead
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    
+                    {% if user.is_superuser or user.role in 'admin,manager' %}
+                    <a href="{% url 'lead_assign' lead.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-user-tag me-2 text-primary"></i>
+                                Assign Lead
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                    
+                    {% if not lead.is_converted %}
+                    <a href="{% url 'convert_lead' lead.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-user-plus me-2 text-success"></i>
+                                Convert to Client
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'client_detail' lead.converted_client.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-user-check me-2 text-success"></i>
+                                View Client
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.is_superuser or user.role in 'admin,manager' %}
+                    <a href="{% url 'lead_delete' lead.id %}" class="list-group-item list-group-item-action text-danger">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-trash me-2"></i>
+                                Delete Lead
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if lead.is_converted %}
+        <div class="card shadow mb-4 border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle me-2"></i> Converted to Client
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label text-muted small mb-1">Client Name</label>
+                    <div class="fw-bold">{{ lead.converted_client.name }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted small mb-1">Company</label>
+                    <div>{{ lead.converted_client.company|default:"-" }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-muted small mb-1">Converted On</label>
+                    <div>{{ lead.converted_client.created_at|date:"F d, Y" }}</div>
+                </div>
+                
+                <div class="d-grid">
+                    <a href="{% url 'client_detail' lead.converted_client.id %}" class="btn btn-success">
+                        <i class="fas fa-user-check me-2"></i> View Client
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% elif client_form %}
+        <div class="card shadow mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-plus me-2"></i> Convert to Client
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>This lead is ready to be converted to a client. Click the button below to proceed.</p>
+                <div class="d-grid">
+                    <a href="{% url 'convert_lead' lead.id %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i> Convert Now
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

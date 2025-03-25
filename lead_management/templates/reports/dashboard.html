@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Lead Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+    </h1>
+    <div>
+        {% if today_attendance and today_attendance.is_ongoing %}
+        <a href="{% url 'punch' %}" class="btn btn-primary">
+            <i class="fas fa-sign-out-alt me-2"></i> Punch Out
+        </a>
+        {% elif not today_attendance %}
+        <a href="{% url 'punch' %}" class="btn btn-success">
+            <i class="fas fa-sign-in-alt me-2"></i> Punch In
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row">
+    <!-- Leads Summary -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card shadow border-left-primary h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Leads
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_leads }}</div>
+                        <div class="text-muted small mt-2">
+                            <span class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i>{{ new_leads_month }}
+                            </span>
+                            new this month
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-funnel-dollar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-2">
+                <a href="{% url 'lead_list' %}" class="text-decoration-none">
+                    <small>View all leads <i class="fas fa-arrow-right ms-1"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Clients Summary -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card shadow border-left-success h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Clients
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_clients }}</div>
+                        <div class="text-muted small mt-2">
+                            <span class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i>{{ new_clients_month }}
+                            </span>
+                            new this month
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-2">
+                <a href="{% url 'client_list' %}" class="text-decoration-none">
+                    <small>View all clients <i class="fas fa-arrow-right ms-1"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Revenue Summary -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card shadow border-left-info h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Monthly Revenue
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold">${{ month_revenue }}</div>
+                        <div class="text-muted small mt-2">
+                            {% if month_revenue > last_month_revenue %}
+                            <span class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i>
+                                {{ month_revenue|sub:last_month_revenue|div:last_month_revenue|mul:100|floatformat:1 }}%
+                            </span>
+                            {% elif month_revenue < last_month_revenue %}
+                            <span class="text-danger">
+                                <i class="fas fa-arrow-down me-1"></i>
+                                {{ last_month_revenue|sub:month_revenue|div:last_month_revenue|mul:100|floatformat:1 }}%
+                            </span>
+                            {% else %}
+                            <span class="text-muted">
+                                <i class="fas fa-equals me-1"></i>0%
+                            </span>
+                            {% endif %}
+                            vs last month
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-2">
+                <a href="{% url 'sales_report' %}" class="text-decoration-none">
+                    <small>View sales report <i class="fas fa-arrow-right ms-1"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Projects Summary -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card shadow border-left-warning h-100">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Active Projects
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold">{{ active_projects }}</div>
+                        <div class="text-muted small mt-2">
+                            <span class="text-primary">
+                                <i class="fas fa-project-diagram me-1"></i>{{ active_projects }}
+                            </span>
+                            in progress
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-2">
+                <a href="{% url 'project_list' %}" class="text-decoration-none">
+                    <small>View all projects <i class="fas fa-arrow-right ms-1"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row">
+    <!-- Lead Status Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold">Lead Status Distribution</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height:300px;">
+                    <canvas id="leadStatusChart"></canvas>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-2 text-center">
+                <a href="{% url 'lead_report' %}" class="text-decoration-none">
+                    <small>View detailed lead report <i class="fas fa-arrow-right ms-1"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Monthly Revenue Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold">Monthly Revenue</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height:300px;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-2 text-center">
+                <a href="{% url 'sales_report' %}" class="text-decoration-none">
+                    <small>View detailed sales report <i class="fas fa-arrow-right ms-1"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity Row -->
+<div class="row">
+    <!-- Recent Leads -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold">Recent Leads</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for lead in recent_leads %}
+                    <a href="{% url 'lead_detail' lead.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ lead.name }}</h6>
+                                <small class="text-muted">
+                                    {{ lead.company|default:lead.email }}
+                                </small>
+                            </div>
+                            <span class="badge {% if lead.is_converted %}bg-success{% else %}bg-primary{% endif %}">
+                                {{ lead.status.name|default:"New" }}
+                            </span>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-center py-3">
+                        <p class="text-muted mb-0">No recent leads found.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-2 text-center">
+                <a href="{% url 'lead_list' %}" class="text-decoration-none">
+                    <small>View all leads <i class="fas fa-arrow-right ms-1"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Clients -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold">Recent Clients</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for client in recent_clients %}
+                    <a href="{% url 'client_detail' client.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ client.name }}</h6>
+                                <small class="text-muted">
+                                    {{ client.company|default:client.email }}
+                                </small>
+                            </div>
+                            <small class="text-muted">
+                                {{ client.created_at|date:"M d" }}
+                            </small>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-center py-3">
+                        <p class="text-muted mb-0">No recent clients found.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-2 text-center">
+                <a href="{% url 'client_list' %}" class="text-decoration-none">
+                    <small>View all clients <i class="fas fa-arrow-right ms-1"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Payments -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold">Recent Payments</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for payment in recent_payments %}
+                    <a href="{% url 'payment_detail' payment.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">${{ payment.amount }}</h6>
+                                <small class="text-muted">
+                                    {{ payment.project.name }}
+                                </small>
+                            </div>
+                            <small class="text-muted">
+                                {{ payment.payment_date|date:"M d" }}
+                            </small>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-center py-3">
+                        <p class="text-muted mb-0">No recent payments found.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-2 text-center">
+                <a href="{% url 'payment_list' %}" class="text-decoration-none">
+                    <small>View all payments <i class="fas fa-arrow-right ms-1"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Lead Status Distribution Chart
+        const leadStatusData = {{ lead_status_data|safe }};
+        const leadStatusCtx = document.getElementById('leadStatusChart').getContext('2d');
+        const leadStatusChart = new Chart(leadStatusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: leadStatusData.map(item => item.status),
+                datasets: [{
+                    data: leadStatusData.map(item => item.count),
+                    backgroundColor: [
+                        '#4e73df', // Primary
+                        '#1cc88a', // Success
+                        '#36b9cc', // Info
+                        '#f6c23e', // Warning
+                        '#e74a3b', // Danger
+                        '#858796', // Secondary
+                        '#5a5c69', // Dark
+                    ],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+        
+        // Monthly Revenue Chart
+        const revenueData = {{ revenue_data|safe }};
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const revenueChart = new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: revenueData.map(item => item.month),
+                datasets: [{
+                    label: 'Revenue',
+                    data: revenueData.map(item => item.revenue),
+                    backgroundColor: '#4e73df',
+                    borderColor: '#4e73df',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '$' + context.parsed.y.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

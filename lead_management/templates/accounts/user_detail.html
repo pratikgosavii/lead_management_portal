@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+
+{% block title %}User Details - {{ user_obj.username }} - Lead Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-user me-2"></i> User Profile
+    </h1>
+    <div>
+        <a href="{% url 'user_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Users
+        </a>
+        <a href="{% url 'user_edit' user_obj.id %}" class="btn btn-primary ms-2">
+            <i class="fas fa-edit me-2"></i> Edit User
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- User Information -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">User Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="avatar-circle mx-auto mb-3">
+                        <span class="initials">{{ user_obj.first_name|slice:":1" }}{{ user_obj.last_name|slice:":1" }}</span>
+                    </div>
+                    <h4>{{ user_obj.get_full_name }}</h4>
+                    <span class="badge bg-primary">{{ user_obj.get_role_display }}</span>
+                    <span class="badge {% if user_obj.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                        {{ user_obj.is_active|yesno:"Active,Inactive" }}
+                    </span>
+                </div>
+                
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <th style="width: 35%">Username:</th>
+                            <td>{{ user_obj.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>Full Name:</th>
+                            <td>{{ user_obj.get_full_name|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ user_obj.email|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Role:</th>
+                            <td>{{ user_obj.get_role_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Phone Number:</th>
+                            <td>{{ user_obj.profile.phone_number|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Daily Rate:</th>
+                            <td>${{ user_obj.profile.daily_rate }}</td>
+                        </tr>
+                        <tr>
+                            <th>Address:</th>
+                            <td>{{ user_obj.profile.address|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date Joined:</th>
+                            <td>{{ user_obj.date_joined|date:"F d, Y" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Last Login:</th>
+                            <td>{{ user_obj.last_login|date:"F d, Y H:i"|default:"-" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics and Actions -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Performance Statistics</h5>
+            </div>
+            <div class="card-body">
+                <!-- Stats -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h2 class="mb-1">{{ user_obj.assigned_leads.count }}</h2>
+                                <p class="text-muted mb-0">Total Leads</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h2 class="mb-1">{{ user_obj.created_clients.count }}</h2>
+                                <p class="text-muted mb-0">Clients Converted</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h2 class="mb-1">{{ user_obj.attendances.count }}</h2>
+                                <p class="text-muted mb-0">Attendance Records</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                {% with present_days=user_obj.attendances.filter.count %}
+                                <h2 class="mb-1">${{ user_obj.profile.daily_rate|default:0|floatformat:2 }}</h2>
+                                <p class="text-muted mb-0">Daily Rate</p>
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <h6 class="mb-3">Quick Actions</h6>
+                <div class="list-group">
+                    <a href="{% url 'user_attendance' user_obj.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-calendar-check me-2 text-primary"></i>
+                                View Attendance Records
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    
+                    {% if user_obj.role != 'admin' %}
+                    <a href="{% url 'lead_list' %}?user={{ user_obj.id }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-funnel-dollar me-2 text-primary"></i>
+                                View Assigned Leads
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.is_superuser or user.role == 'admin' %}
+                    <a href="{% url 'user_edit' user_obj.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-user-edit me-2 text-primary"></i>
+                                Edit User
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.is_superuser or user.role == 'admin' %}
+                    {% if user_obj.id != user.id %}
+                    <a href="{% url 'user_delete' user_obj.id %}" class="list-group-item list-group-item-action text-danger">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-trash me-2"></i>
+                                Delete User
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_superuser or user.role in 'admin,manager' %}
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Recent Activity</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Activity</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% with recent_leads=user_obj.assigned_leads.all|slice:":5" %}
+                            {% for lead in recent_leads %}
+                            <tr>
+                                <td>{{ lead.created_at|date:"M d, Y" }}</td>
+                                <td>Lead Assigned</td>
+                                <td>
+                                    <a href="{% url 'lead_detail' lead.id %}">{{ lead.name }} - {{ lead.company }}</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endwith %}
+                            
+                            {% with recent_attendance=user_obj.attendances.all|slice:":5" %}
+                            {% for attendance in recent_attendance %}
+                            <tr>
+                                <td>{{ attendance.date|date:"M d, Y" }}</td>
+                                <td>Attendance</td>
+                                <td>
+                                    {{ attendance.get_status_display }} 
+                                    {% if attendance.time_in %}
+                                    (In: {{ attendance.time_in|time:"H:i" }}
+                                    {% if attendance.time_out %}
+                                    , Out: {{ attendance.time_out|time:"H:i" }})
+                                    {% else %}
+                                    )
+                                    {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endwith %}
+                            
+                            {% with recent_clients=user_obj.created_clients.all|slice:":5" %}
+                            {% for client in recent_clients %}
+                            <tr>
+                                <td>{{ client.created_at|date:"M d, Y" }}</td>
+                                <td>Client Created</td>
+                                <td>
+                                    <a href="{% url 'client_detail' client.id %}">{{ client.name }} - {{ client.company }}</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endwith %}
+                            
+                            {% if not user_obj.assigned_leads.exists and not user_obj.attendances.exists and not user_obj.created_clients.exists %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4">
+                                    <p class="text-muted mb-0">No recent activity found.</p>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .avatar-circle {
+        width: 80px;
+        height: 80px;
+        background-color: #4e73df;
+        text-align: center;
+        border-radius: 50%;
+        -webkit-border-radius: 50%;
+        -moz-border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .initials {
+        position: relative;
+        font-size: 2rem;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

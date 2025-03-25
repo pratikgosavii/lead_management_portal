@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}Client Details - {{ client.name }} - Lead Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-user me-2"></i> Client Details
+    </h1>
+    <div>
+        <a href="{% url 'client_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Clients
+        </a>
+        <a href="{% url 'client_edit' client.id %}" class="btn btn-primary ms-2">
+            <i class="fas fa-edit me-2"></i> Edit
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Client Information -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Client Information</h5>
+                    {% if client.converted_from_lead %}
+                    <span class="badge bg-success">Converted from Lead</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-3">Basic Information</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Full Name</label>
+                            <div class="fw-bold">{{ client.name }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Company</label>
+                            <div>{{ client.company|default:"-" }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Phone Number</label>
+                            <div>{{ client.phone }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Email Address</label>
+                            <div>{{ client.email }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Address</label>
+                            <div>{{ client.address|default:"-"|linebreaks }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-3">Additional Details</h6>
+                        
+                        {% if client.converted_from_lead %}
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Converted From Lead</label>
+                            <div>
+                                <a href="{% url 'lead_detail' client.lead.id %}" class="text-decoration-none">
+                                    {{ client.lead.name }} - {{ client.lead.company|default:"" }}
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Lead Source</label>
+                            <div>{{ client.lead.source.name|default:"-" }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Created By</label>
+                            <div>
+                                {% if client.created_by %}
+                                {{ client.created_by.get_full_name|default:client.created_by.username }}
+                                {% else %}
+                                <span class="text-muted">System</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Created At</label>
+                            <div>{{ client.created_at|date:"F d, Y H:i" }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Last Updated</label>
+                            <div>{{ client.updated_at|date:"F d, Y H:i" }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-3">Notes</h6>
+                        <div class="p-3 bg-light rounded">
+                            {{ client.notes|default:"No notes available."|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Projects and Actions -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{% url 'client_edit' client.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-edit me-2 text-primary"></i>
+                                Edit Client
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    
+                    <a href="{% url 'project_add' %}?client={{ client.id }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-project-diagram me-2 text-primary"></i>
+                                Add New Project
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    
+                    <a href="{% url 'client_projects' client.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-clipboard-list me-2 text-primary"></i>
+                                View All Projects
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    
+                    {% if client.converted_from_lead %}
+                    <a href="{% url 'lead_detail' client.lead.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-funnel-dollar me-2 text-primary"></i>
+                                View Original Lead
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.is_superuser or user.role in 'admin,manager' %}
+                    <a href="{% url 'client_delete' client.id %}" class="list-group-item list-group-item-action text-danger">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-trash me-2"></i>
+                                Delete Client
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Projects Overview -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Projects Overview</h5>
+            </div>
+            <div class="card-body">
+                {% with projects=client.projects.all %}
+                {% if projects %}
+                <div class="list-group">
+                    {% for project in projects|slice:":5" %}
+                    <a href="{% url 'project_detail' project.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ project.name }}</strong>
+                                <small class="d-block text-muted">{{ project.status.name }}</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">${{ project.budget }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                    
+                    {% if projects.count > 5 %}
+                    <a href="{% url 'client_projects' client.id %}" class="list-group-item list-group-item-action text-center">
+                        <i class="fas fa-plus me-2"></i> View All {{ projects.count }} Projects
+                    </a>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-3">No projects found for this client.</p>
+                    <a href="{% url 'project_add' %}?client={{ client.id }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i> Add First Project
+                    </a>
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+        
+        <!-- Financial Summary -->
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Financial Summary</h5>
+            </div>
+            <div class="card-body">
+                {% with projects=client.projects.all %}
+                {% if projects %}
+                    {% with total_budget=projects.aggregate_sum.budget total_paid=projects.aggregate_sum.payments__amount %}
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center p-2">
+                                    <h5 class="mb-0">${{ projects.aggregate_sum.budget|default:"0.00" }}</h5>
+                                    <small class="text-muted">Total Budget</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center p-2">
+                                    <h5 class="mb-0">${{ projects.aggregate_sum.payments__amount|default:"0.00" }}</h5>
+                                    <small class="text-muted">Total Paid</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% else %}
+                <p class="text-muted text-center mb-0">No financial data available yet.</p>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

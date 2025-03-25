@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Lead - {{ lead.name }} - Lead Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-user-tag me-2"></i> Assign Lead
+    </h1>
+    <div>
+        <a href="{% url 'lead_detail' lead.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Lead
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Assign "{{ lead.name }}" to a User</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Lead Information</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Full Name</label>
+                            <div class="fw-bold">{{ lead.name }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Company</label>
+                            <div>{{ lead.company|default:"-" }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Contact</label>
+                            <div>
+                                <small class="d-block">{{ lead.phone }}</small>
+                                <small class="d-block">{{ lead.email }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Current Assignment</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Status</label>
+                            <div>
+                                <span class="badge {% if lead.is_converted %}bg-success{% else %}bg-primary{% endif %}">
+                                    {{ lead.status.name|default:"New" }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Currently Assigned To</label>
+                            <div>
+                                {% if lead.assigned_to %}
+                                {{ lead.assigned_to.get_full_name|default:lead.assigned_to.username }}
+                                <span class="badge bg-secondary">{{ lead.assigned_to.get_role_display }}</span>
+                                {% else %}
+                                <span class="text-muted">Unassigned</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Created</label>
+                            <div>{{ lead.created_at|date:"F d, Y" }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <p>Please correct the errors below:</p>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <label for="{{ form.assigned_to.id_for_label }}" class="form-label">Assign to User</label>
+                        {{ form.assigned_to }}
+                        <div class="form-text text-muted">
+                            <small>Select the user who will be responsible for managing this lead.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end">
+                        <a href="{% url 'lead_detail' lead.id %}" class="btn btn-secondary me-2">
+                            <i class="fas fa-times me-2"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-tag me-2"></i> Assign Lead
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

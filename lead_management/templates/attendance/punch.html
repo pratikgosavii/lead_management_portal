@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance Punch In/Out - Lead Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-clock me-2"></i> Attendance Punch In/Out
+    </h1>
+    <div>
+        <a href="{% url 'my_attendance' %}" class="btn btn-secondary">
+            <i class="fas fa-calendar-check me-2"></i> My Attendance
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Punch Card -->
+    <div class="col-lg-5 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Today's Attendance</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="display-4 mb-3" id="current-time">00:00:00</div>
+                    <div class="h5 text-muted">{{ current_date|date:"l, F d, Y" }}</div>
+                </div>
+                
+                {% if current_attendance %}
+                <div class="alert {% if current_attendance.is_ongoing %}alert-warning{% else %}alert-success{% endif %} mb-4">
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <h5 class="alert-heading mb-1">
+                                {% if current_attendance.is_ongoing %}
+                                <i class="fas fa-hourglass-half me-2"></i> Currently Working
+                                {% else %}
+                                <i class="fas fa-check-circle me-2"></i> Completed for Today
+                                {% endif %}
+                            </h5>
+                            <p class="mb-0">
+                                {% if current_attendance.time_in %}
+                                <strong>Punch In:</strong> {{ current_attendance.time_in|time:"H:i:s" }}
+                                {% endif %}
+                                
+                                {% if current_attendance.time_out %}
+                                <br><strong>Punch Out:</strong> {{ current_attendance.time_out|time:"H:i:s" }}
+                                <br><strong>Hours Worked:</strong> {{ current_attendance.total_hours }} hours
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="punch_type" value="{{ punch_type }}">
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">Notes (Optional)</label>
+                        {{ form.notes }}
+                    </div>
+                    
+                    <div class="d-grid">
+                        {% if punch_type == 'in' %}
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i> Punch In
+                        </button>
+                        {% else %}
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-out-alt me-2"></i> Punch Out
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Attendance History -->
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Recent Attendance History</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
+                                <th>Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_history %}
+                            <tr>
+                                <td>
+                                    {{ record.date|date:"M d, Y" }}
+                                    <small class="text-muted d-block">{{ record.date|date:"l" }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if record.status == 'present' %}bg-success
+                                        {% elif record.status == 'absent' %}bg-danger
+                                        {% elif record.status == 'half_day' %}bg-warning text-dark
+                                        {% elif record.status == 'leave' %}bg-info
+                                        {% else %}bg-secondary
+                                        {% endif %}">
+                                        {{ record.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if record.time_in %}
+                                    {{ record.time_in|time:"H:i" }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.time_out %}
+                                    {{ record.time_out|time:"H:i" }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.time_in and record.time_out %}
+                                    {{ record.total_hours }} hrs
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <p class="text-muted mb-0">No recent attendance records found.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white text-center">
+                <a href="{% url 'my_attendance' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-calendar-alt me-2"></i> View All Attendance Records
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Update the current time display
+    function updateTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        
+        document.getElementById('current-time').textContent = `${hours}:${minutes}:${seconds}`;
+    }
+    
+    // Update time every second
+    updateTime();
+    setInterval(updateTime, 1000);
+</script>
+{% endblock %}

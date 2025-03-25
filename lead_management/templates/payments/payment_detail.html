@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Details - Lead Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-money-bill-wave me-2"></i> Payment Details
+    </h1>
+    <div>
+        <a href="{% url 'payment_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Payments
+        </a>
+        <a href="{% url 'payment_edit' payment.id %}" class="btn btn-primary ms-2">
+            <i class="fas fa-edit me-2"></i> Edit
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    Payment of <span class="text-success">${{ payment.amount }}</span> for {{ payment.project.name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-3">Payment Information</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Amount</label>
+                            <div class="fw-bold text-success">${{ payment.amount }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Payment Date</label>
+                            <div>{{ payment.payment_date|date:"F d, Y" }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Payment Method</label>
+                            <div>{{ payment.payment_method.name|default:"-" }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Reference Number</label>
+                            <div>{{ payment.reference_number|default:"-" }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-3">Project Information</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Project</label>
+                            <div>
+                                <a href="{% url 'project_detail' payment.project.id %}" class="text-decoration-none">
+                                    {{ payment.project.name }}
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Client</label>
+                            <div>
+                                <a href="{% url 'client_detail' payment.project.client.id %}" class="text-decoration-none">
+                                    {{ payment.project.client.name }}
+                                    {% if payment.project.client.company %}
+                                    - {{ payment.project.client.company }}
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Project Budget</label>
+                            <div>${{ payment.project.budget }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Project Payment Status</label>
+                            <div>
+                                <span class="badge {% if payment.project.payment_status == 'Paid' %}bg-success{% elif payment.project.payment_status == 'Partially Paid' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                    {{ payment.project.payment_status }}
+                                </span>
+                                
+                                {% if payment.project.remaining_amount > 0 %}
+                                <small class="text-muted ms-2">${{ payment.project.remaining_amount }} remaining</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-3">Description</h6>
+                        <div class="p-3 bg-light rounded">
+                            {{ payment.description|default:"No description provided."|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-3">Payment Record</h6>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 35%">Created By</th>
+                                    <td>
+                                        {% if payment.created_by %}
+                                        {{ payment.created_by.get_full_name|default:payment.created_by.username }}
+                                        {% else %}
+                                        <span class="text-muted">System</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Record Created</th>
+                                    <td>{{ payment.created_at|date:"F d, Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Updated</th>
+                                    <td>{{ payment.updated_at|date:"F d, Y H:i" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'project_payments' payment.project.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-2"></i> View All Payments for This Project
+                    </a>
+                    
+                    <div>
+                        <a href="{% url 'payment_edit' payment.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i> Edit
+                        </a>
+                        
+                        {% if user.is_superuser or user.role in 'admin,manager' %}
+                        <a href="{% url 'payment_delete' payment.id %}" class="btn btn-danger ms-2">
+                            <i class="fas fa-trash me-2"></i> Delete
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

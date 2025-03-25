@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}Project Details - {{ project.name }} - Lead Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">
+        <i class="fas fa-project-diagram me-2"></i> Project Details
+    </h1>
+    <div>
+        <a href="{% url 'project_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Projects
+        </a>
+        <a href="{% url 'project_edit' project.id %}" class="btn btn-primary ms-2">
+            <i class="fas fa-edit me-2"></i> Edit
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Project Information -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Project Information</h5>
+                    <span class="badge bg-primary">{{ project.status.name }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-3">Basic Information</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Project Name</label>
+                            <div class="fw-bold">{{ project.name }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Client</label>
+                            <div>
+                                <a href="{% url 'client_detail' project.client.id %}" class="text-decoration-none">
+                                    {{ project.client.name }}
+                                    {% if project.client.company %}
+                                    - {{ project.client.company }}
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Description</label>
+                            <div>{{ project.description|default:"-"|linebreaks }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-muted mb-3">Project Details</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Status</label>
+                            <div>
+                                <span class="badge bg-primary">{{ project.status.name }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Timeline</label>
+                            <div>
+                                <strong>Start:</strong> {{ project.start_date|date:"F d, Y" }}<br>
+                                {% if project.end_date %}
+                                <strong>End:</strong> {{ project.end_date|date:"F d, Y" }}
+                                {% else %}
+                                <strong>End:</strong> <span class="text-muted">Not set</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Budget</label>
+                            <div class="fw-bold">${{ project.budget }}</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Created By</label>
+                            <div>
+                                {% if project.created_by %}
+                                {{ project.created_by.get_full_name|default:project.created_by.username }}
+                                {% else %}
+                                <span class="text-muted">System</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small mb-1">Created At</label>
+                            <div>{{ project.created_at|date:"F d, Y H:i" }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-3">Notes</h6>
+                        <div class="p-3 bg-light rounded">
+                            {{ project.notes|default:"No notes available."|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Information and Actions -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Financial Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center p-3">
+                                <h3 class="mb-0">${{ project.budget }}</h3>
+                                <p class="text-muted mb-0">Total Budget</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center p-3">
+                                <h3 class="mb-0">${{ project.total_payments }}</h3>
+                                <p class="text-muted mb-0">Total Paid</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Status -->
+                <div class="progress mb-3" style="height: 25px;">
+                    {% with percentage=project.total_payments|floatformat:2|unlocalize|div:project.budget|floatformat:2|mul:100 %}
+                    <div class="progress-bar {% if percentage >= 100 %}bg-success{% elif percentage > 0 %}bg-warning{% else %}bg-danger{% endif %}" 
+                         role="progressbar" 
+                         style="width: {{ percentage }}%;" 
+                         aria-valuenow="{{ percentage }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        {{ percentage }}%
+                    </div>
+                    {% endwith %}
+                </div>
+                
+                <div class="text-center mb-4">
+                    <span class="badge {% if project.payment_status == 'Paid' %}bg-success{% elif project.payment_status == 'Partially Paid' %}bg-warning text-dark{% else %}bg-danger{% endif %} p-2">
+                        {{ project.payment_status }}
+                    </span>
+                    
+                    {% if project.remaining_amount > 0 %}
+                    <div class="mt-2">
+                        <strong>${{ project.remaining_amount }}</strong> remaining
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid">
+                    <a href="{% url 'payment_add' %}?project={{ project.id }}" class="btn btn-success">
+                        <i class="fas fa-money-bill-wave me-2"></i> Record Payment
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{% url 'project_edit' project.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-edit me-2 text-primary"></i>
+                                Edit Project
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    
+                    <a href="{% url 'project_payments' project.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-money-check-alt me-2 text-primary"></i>
+                                View Payment History
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    
+                    <a href="{% url 'client_detail' project.client.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-user me-2 text-primary"></i>
+                                View Client
+                            </div>
+                            <i class="fas fa-chevron-right text-muted"></i>
+                        </div>
+                    </a>
+                    
+                    {% if user.is_superuser or user.role in 'admin,manager' %}
+                    <a href="{% url 'project_delete' project.id %}" class="list-group-item list-group-item-action text-danger">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-trash me-2"></i>
+                                Delete Project
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Payments -->
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Recent Payments</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for payment in payments %}
+                    <a href="{% url 'payment_detail' payment.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-success me-2">${{ payment.amount }}</span>
+                                {{ payment.payment_date|date:"M d, Y" }}
+                            </div>
+                            <small class="text-muted">{{ payment.payment_method.name }}</small>
+                        </div>
+                        {% if payment.reference_number %}
+                        <small class="text-muted">Ref: {{ payment.reference_number }}</small>
+                        {% endif %}
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-center py-3">
+                        <p class="text-muted mb-0">No payments recorded yet.</p>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if payments.count > 0 %}
+                    <a href="{% url 'project_payments' project.id %}" class="list-group-item list-group-item-action text-center">
+                        <i class="fas fa-eye me-2"></i> View All Payments
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Calculate the payment percentage more accurately
+    document.addEventListener('DOMContentLoaded', function() {
+        const budget = {{ project.budget }};
+        const totalPaid = {{ project.total_payments }};
+        
+        if (budget > 0) {
+            const percentage = Math.min(100, (totalPaid / budget) * 100);
+            
+            const progressBar = document.querySelector('.progress-bar');
+            progressBar.style.width = percentage + '%';
+            progressBar.setAttribute('aria-valuenow', percentage);
+            progressBar.textContent = percentage.toFixed(1) + '%';
+            
+            if (percentage >= 100) {
+                progressBar.classList.add('bg-success');
+                progressBar.classList.remove('bg-warning', 'bg-danger');
+            } else if (percentage > 0) {
+                progressBar.classList.add('bg-warning');
+                progressBar.classList.remove('bg-success', 'bg-danger');
+            } else {
+                progressBar.classList.add('bg-danger');
+                progressBar.classList.remove('bg-success', 'bg-warning');
+            }
+        }
+    });
+</script>
+{% endblock %}
