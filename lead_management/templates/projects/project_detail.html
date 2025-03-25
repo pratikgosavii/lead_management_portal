@@ -140,7 +140,7 @@
                 
                 <!-- Payment Status -->
                 <div class="progress mb-3" style="height: 25px;">
-                    {% with percentage=project.total_payments|floatformat:2|unlocalize|div:project.budget|floatformat:2|mul:100 %}
+                    {% with percentage=project.total_payments|default:0|floatformat:2|unlocalize|div:project.budget|default:1|floatformat:2|mul:100 %}
                     <div class="progress-bar {% if percentage >= 100 %}bg-success{% elif percentage > 0 %}bg-warning{% else %}bg-danger{% endif %}" 
                          role="progressbar" 
                          style="width: {{ percentage }}%;" 
