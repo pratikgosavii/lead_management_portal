@@ -28,6 +28,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+    # Third party apps
+    'mathfilters',
+    
     # Local apps
     'accounts.apps.AccountsConfig',
     'leads.apps.LeadsConfig',

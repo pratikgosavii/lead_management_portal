@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
+    "django-mathfilters>=1.0.0",
     "django>=5.1.7",
     "pillow>=11.1.0",
 ]
