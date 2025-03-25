@@ -6,10 +6,14 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
 from datetime import datetime, date, timedelta
+import pytz
 
 from .models import Attendance
 from .forms import AttendanceForm, PunchInForm, PunchOutForm
 from accounts.models import CustomUser
+
+# Set Indian Standard Time timezone
+IST = pytz.timezone('Asia/Kolkata')
 
 class AdminOrManagerRequiredMixin(UserPassesTestMixin):
     """Restrict access to admins or managers"""
@@ -145,16 +149,22 @@ class PunchView(LoginRequiredMixin, TemplateView):
             form = PunchInForm(request.POST)
             if form.is_valid():
                 notes = form.cleaned_data.get('notes')
+                # Use IST time now
+                ist_now = timezone.now().astimezone(IST)
                 attendance = Attendance.punch_in(request.user, notes)
-                messages.success(request, f'Punched in at {attendance.time_in.strftime("%H:%M:%S")}')
+                # Display IST time in message
+                messages.success(request, f'Punched in at {ist_now.strftime("%H:%M:%S")} IST')
         
         elif punch_type == 'out':
             form = PunchOutForm(request.POST)
             if form.is_valid():
                 notes = form.cleaned_data.get('notes')
+                # Use IST time now
+                ist_now = timezone.now().astimezone(IST)
                 attendance = Attendance.punch_out(request.user, notes)
                 if attendance:
-                    messages.success(request, f'Punched out at {attendance.time_out.strftime("%H:%M:%S")}')
+                    # Display IST time in message
+                    messages.success(request, f'Punched out at {ist_now.strftime("%H:%M:%S")} IST')
                 else:
                     messages.error(request, 'No active attendance found to punch out from.')
         
