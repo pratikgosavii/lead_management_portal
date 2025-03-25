@@ -164,7 +164,15 @@
             <div class="col-md-4 mb-3">
                 <div class="card bg-light">
                     <div class="card-body text-center">
-                        <h3>${{ payments|dictsort:"amount"|last|attr:"amount"|default:"0" }}</h3>
+                        <h3>
+                            {% with sorted_payments=payments|dictsort:"amount" %}
+                                {% if sorted_payments %}
+                                    ${{ sorted_payments|last|first }}
+                                {% else %}
+                                    $0
+                                {% endif %}
+                            {% endwith %}
+                        </h3>
                         <p class="text-muted mb-0">Largest Payment</p>
                     </div>
                 </div>
