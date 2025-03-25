@@ -144,21 +144,3 @@ class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
     def form_valid(self, form):
         messages.success(self.request, 'Password changed successfully.')
         return super().form_valid(form)
-@method_decorator(login_required, name='dispatch')
-class AdminPasswordChangeView(AdminOrManagerRequiredMixin, View):
-    """Admin view to change user passwords"""
-    template_name = 'accounts/admin_password_change.html'
-    
-    def get(self, request, pk):
-        user = get_object_or_404(CustomUser, pk=pk)
-        form = SetPasswordForm(user)
-        return render(request, self.template_name, {'form': form, 'user_obj': user})
-    
-    def post(self, request, pk):
-        user = get_object_or_404(CustomUser, pk=pk)
-        form = SetPasswordForm(user, request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f'Password for {user.username} changed successfully.')
-            return redirect('user_list')
-        return render(request, self.template_name, {'form': form, 'user_obj': user})
