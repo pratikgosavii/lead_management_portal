@@ -20,14 +20,26 @@ class AdminOrManagerRequiredMixin(UserPassesTestMixin):
 class CustomLoginView(LoginView):
     """Custom login view"""
     template_name = 'registration/login.html'
-    redirect_authenticated_user = True
+    success_url = reverse_lazy('dashboard')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        user = form.get_user()
+        if not user.is_active:
+            messages.error(self.request, 'Your account is inactive. Please contact administrator.')
+            return redirect('login')
+        messages.success(self.request, 'Login successful.')
+        return response
+
+    def get_success_url(self):
+        return self.success_url
 
 class UserListView(LoginRequiredMixin, AdminOrManagerRequiredMixin, ListView):
     """List all users"""
     model = CustomUser
     template_name = 'accounts/user_list.html'
     context_object_name = 'users'
-    
+
     def get_queryset(self):
         # Managers can only see team leaders and sales reps
         if self.request.user.role == 'manager':
@@ -47,7 +59,14 @@ class UserCreateView(LoginRequiredMixin, AdminOrManagerRequiredMixin, CreateView
     form_class = CustomUserCreationForm
     template_name = 'accounts/user_form.html'
     success_url = reverse_lazy('user_list')
-    
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        user.is_active = True
+        user.save()
+        messages.success(self.request, f'User {user.username} created successfully.')
+        return super().form_valid(form)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.POST:
@@ -55,24 +74,24 @@ class UserCreateView(LoginRequiredMixin, AdminOrManagerRequiredMixin, CreateView
         else:
             context['profile_form'] = UserProfileForm()
         return context
-    
+
     def form_valid(self, form):
         context = self.get_context_data()
         profile_form = context['profile_form']
-        
+
         with transaction.atomic():
             user = form.save()
-            
+
             if profile_form.is_valid():
                 profile = user.profile
                 profile.phone_number = profile_form.cleaned_data.get('phone_number')
                 profile.address = profile_form.cleaned_data.get('address')
                 profile.daily_rate = profile_form.cleaned_data.get('daily_rate')
                 profile.save()
-                
+
             messages.success(self.request, f'User {user.username} created successfully.')
             return redirect(self.success_url)
-        
+
         return super().form_valid(form)
 
 class UserUpdateView(LoginRequiredMixin, AdminOrManagerRequiredMixin, UpdateView):
@@ -81,7 +100,7 @@ class UserUpdateView(LoginRequiredMixin, AdminOrManagerRequiredMixin, UpdateView
     form_class = CustomUserChangeForm
     template_name = 'accounts/user_form.html'
     success_url = reverse_lazy('user_list')
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.POST:
@@ -89,20 +108,20 @@ class UserUpdateView(LoginRequiredMixin, AdminOrManagerRequiredMixin, UpdateView
         else:
             context['profile_form'] = UserProfileForm(instance=self.object.profile)
         return context
-    
+
     def form_valid(self, form):
         context = self.get_context_data()
         profile_form = context['profile_form']
-        
+
         with transaction.atomic():
             user = form.save()
-            
+
             if profile_form.is_valid():
                 profile_form.save()
-                
+
             messages.success(self.request, f'User {user.username} updated successfully.')
             return redirect(self.success_url)
-        
+
         return super().form_valid(form)
 
 class UserDeleteView(LoginRequiredMixin, AdminOrManagerRequiredMixin, DeleteView):
@@ -111,7 +130,7 @@ class UserDeleteView(LoginRequiredMixin, AdminOrManagerRequiredMixin, DeleteView
     template_name = 'accounts/user_confirm_delete.html'
     success_url = reverse_lazy('user_list')
     context_object_name = 'user_obj'
-    
+
     def delete(self, request, *args, **kwargs):
         user = self.get_object()
         messages.success(request, f'User {user.username} deleted successfully.')
@@ -121,7 +140,7 @@ class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
     """Change user password"""
     template_name = 'accounts/password_change_form.html'
     success_url = reverse_lazy('user_list')
-    
+
     def form_valid(self, form):
         messages.success(self.request, 'Password changed successfully.')
         return super().form_valid(form)
