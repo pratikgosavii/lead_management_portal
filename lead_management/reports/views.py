@@ -68,10 +68,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 status=converted_status
             ).count()
             
-            context['conversion_rate'] = (
-                round((context['converted_leads'] / context['total_leads']) * 100, 2)
-                if context['total_leads'] > 0 else 0
-            )
+            try:
+                context['conversion_rate'] = (
+                    round((context['converted_leads'] / context['total_leads']) * 100, 2)
+                    if context['total_leads'] > 0 else 0
+                )
+            except (ZeroDivisionError, TypeError):
+                context['conversion_rate'] = 0
             
             context['this_month_conversions'] = Lead.objects.filter(
                 lead_filter,
@@ -96,10 +99,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             ~Q(status__name__in=['Completed', 'Cancelled'])
         ).count()
         
-        # Payment statistics
-        context['total_revenue'] = Payment.objects.filter(payment_filter).aggregate(
-            total=Sum('amount')
-        )['total'] or 0
+        # Payment statistics with error handling
+        try:
+            context['total_revenue'] = Payment.objects.filter(payment_filter).aggregate(
+                total=Sum('amount')
+            )['total'] or 0
+        except Exception:
+            context['total_revenue'] = 0
         
         context['month_revenue'] = Payment.objects.filter(
             payment_filter,
