@@ -98,11 +98,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         ).count()
 
         # Project statistics
-        context['active_projects'] = Project.objects.filter(
-            Q(client__in=Client.objects.filter(client_filter)) &
-            ~Q(status__name__in=['Completed', 'Cancelled'])
-        ).count()
-
+       
         # Payment statistics with error handling
         try:
             context['total_revenue'] = Payment.objects.filter(payment_filter).aggregate(

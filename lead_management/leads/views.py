@@ -61,30 +61,30 @@ class LeadListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = Lead.objects.all()
         
-        # Filter by role
-        if self.request.user.role == 'sales_rep':
-            queryset = queryset.filter(assigned_to=self.request.user)
-        elif self.request.user.role == 'team_leader':
-            team_members = CustomUser.objects.filter(
-                Q(role='sales_rep') & 
-                (Q(profile__team_leader=self.request.user) | Q(pk=self.request.user.pk))
-            )
-            queryset = queryset.filter(assigned_to__in=team_members)
+        # # Filter by role
+        # if self.request.user.role == 'sales_rep':
+        #     queryset = queryset.filter(assigned_to=self.request.user)
+        # elif self.request.user.role == 'team_leader':
+        #     team_members = CustomUser.objects.filter(
+        #         Q(role='sales_rep') & 
+        #         (Q(profile__team_leader=self.request.user) | Q(pk=self.request.user.pk))
+        #     )
+        #     queryset = queryset.filter(assigned_to__in=team_members)
             
-        # Search and filter options
-        search_query = self.request.GET.get('search', '')
-        status_filter = self.request.GET.get('status', '')
+        # # Search and filter options
+        # search_query = self.request.GET.get('search', '')
+        # status_filter = self.request.GET.get('status', '')
         
-        if search_query:
-            queryset = queryset.filter(
-                Q(name__icontains=search_query) |
-                Q(company__icontains=search_query) |
-                Q(email__icontains=search_query) |
-                Q(phone__icontains=search_query)
-            )
+        # if search_query:
+        #     queryset = queryset.filter(
+        #         Q(name__icontains=search_query) |
+        #         Q(company__icontains=search_query) |
+        #         Q(email__icontains=search_query) |
+        #         Q(phone__icontains=search_query)
+        #     )
             
-        if status_filter:
-            queryset = queryset.filter(status__id=status_filter)
+        # if status_filter:
+        #     queryset = queryset.filter(status__id=status_filter)
             
         return queryset
     
@@ -329,3 +329,62 @@ class ExportLeadsPDFView(LoginRequiredMixin, View):
             return response
         
         return HttpResponse("Error generating PDF", status=500)
+
+
+import pandas as pd
+from django.shortcuts import render
+from django.contrib import messages
+from .forms import ExcelUploadForm
+
+def upload_leads(request):
+    if request.method == "POST":
+        form = ExcelUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES["file"]
+
+            try:
+                df = pd.read_excel(file)  # Read Excel File
+                
+                leads_data = []
+                for _, row in df.iterrows():
+                    # Check if Source exists, else create it
+                    source_name = row.get("Source", "").strip()
+                    if source_name:
+                        source, _ = LeadSource.objects.get_or_create(name=source_name)
+                    else:
+                        source = None  # Allow blank sources
+
+                    # Check if Status exists, else create it
+                    status_name = row.get("Status", "").strip()
+                    if status_name:
+                        status, _ = LeadStatus.objects.get_or_create(name=status_name)
+                    else:
+                        status = None  # Allow blank statuses
+
+                    # Check if Assigned User exists
+
+                    # Append processed data
+                    leads_data.append({
+                        "name": row.get("Name", ""),
+                        "company": row.get("Company", ""),
+                        "phone": row.get("Phone", ""),
+                        "email": row.get("Email", ""),
+                        "address": row.get("Address", ""),
+                        "source": source,
+                        "status": status,
+                        "created_by": request.user,
+                    })
+
+                # Bulk Insert Leads
+                Lead.objects.bulk_create([Lead(**data) for data in leads_data])
+
+                messages.success(request, "Excel data processed and leads added successfully!")
+                return render(request, "upload_leads.html", {"form": form})
+
+            except Exception as e:
+                messages.error(request, f"Error: {e}")
+    
+    else:
+        form = ExcelUploadForm()
+
+    return render(request, "upload_leads.html", {"form": form})

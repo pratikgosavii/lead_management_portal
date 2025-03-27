@@ -41,3 +41,9 @@ class LeadAssignForm(forms.ModelForm):
     class Meta:
         model = Lead
         fields = ('assigned_to',)
+
+
+from django import forms
+
+class ExcelUploadForm(forms.Form):
+    file = forms.FileField()

@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+from .views import *
+
 urlpatterns = [
     path('', views.LeadListView.as_view(), name='lead_list'),
     path('add/', views.LeadCreateView.as_view(), name='lead_add'),
@@ -11,4 +13,7 @@ urlpatterns = [
     path('my-leads/', views.MyLeadsView.as_view(), name='my_leads'),
     path('export/excel/', views.ExportLeadsExcelView.as_view(), name='lead_export_excel'),
     path('export/pdf/', views.ExportLeadsPDFView.as_view(), name='lead_export_pdf'),
+
+    path("upload/", upload_leads, name="upload_leads"),
+
 ]

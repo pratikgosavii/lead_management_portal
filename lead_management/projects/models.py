@@ -18,12 +18,22 @@ class ProjectStatus(models.Model):
 
 class Project(models.Model):
     """Model to store project information"""
+
+    STATUS_CHOICES = [
+        ('started', 'started'),
+        ('figma_completed', 'figma done'),
+        ('frontend_completed', 'frontend completed'),
+        ('backend_completed', 'backend completed'),
+        ('completed', 'completed'),
+    ]
+
+
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='projects')
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)
-    status = models.ForeignKey(ProjectStatus, on_delete=models.SET_NULL, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='upcoming')
     budget = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(

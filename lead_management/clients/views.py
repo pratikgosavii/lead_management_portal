@@ -61,28 +61,7 @@ class ClientListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = Client.objects.all()
         
-        # Filter by role
-        if self.request.user.role == 'sales_rep':
-            # Get all leads assigned to this user
-            leads = Lead.objects.filter(assigned_to=self.request.user)
-            queryset = queryset.filter(lead__in=leads)
-        elif self.request.user.role == 'team_leader':
-            team_members = CustomUser.objects.filter(
-                Q(role='sales_rep') & 
-                (Q(profile__team_leader=self.request.user) | Q(pk=self.request.user.pk))
-            )
-            leads = Lead.objects.filter(assigned_to__in=team_members)
-            queryset = queryset.filter(lead__in=leads)
-            
-        # Search query
-        search_query = self.request.GET.get('search', '')
-        if search_query:
-            queryset = queryset.filter(
-                Q(name__icontains=search_query) |
-                Q(company__icontains=search_query) |
-                Q(email__icontains=search_query) |
-                Q(phone__icontains=search_query)
-            )
+        # 
             
         return queryset
     
