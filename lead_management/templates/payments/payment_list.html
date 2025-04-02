@@ -76,7 +76,7 @@
                         </a>
                     </td>
                     <td class="fw-bold">${{ payment.amount }}</td>
-                    <td>{{ payment.payment_method.name|default:"-" }}</td>
+                    <td>{{ payment.payment_method|default:"-" }}</td>
                     <td>{{ payment.reference_number|default:"-" }}</td>
                     <td>
                         <div class="btn-group btn-group-sm">

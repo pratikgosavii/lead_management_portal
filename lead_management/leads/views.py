@@ -379,7 +379,7 @@ def upload_leads(request):
                 Lead.objects.bulk_create([Lead(**data) for data in leads_data])
 
                 messages.success(request, "Excel data processed and leads added successfully!")
-                return render(request, "upload_leads.html", {"form": form})
+                return redirect('lead_list')
 
             except Exception as e:
                 messages.error(request, f"Error: {e}")

@@ -13,10 +13,20 @@ class PaymentMethod(models.Model):
 
 class Payment(models.Model):
     """Model to store payment information"""
+
+    STATUS_CHOICES = [
+        ('Cash', 'Cash'),
+        ('UPI', 'figma done'),
+        ('Other_Company', 'Other_Company'),
+        ('Cheque', 'Cheque'),
+        ('Paypal', 'Paypal'),
+    ]
+
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='payments')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_date = models.DateField()
-    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True)
+    payment_method = models.CharField(max_length=20, choices=STATUS_CHOICES, default='upcoming')
     description = models.TextField(blank=True, null=True)
     reference_number = models.CharField(max_length=100, blank=True, null=True)
     created_by = models.ForeignKey(
